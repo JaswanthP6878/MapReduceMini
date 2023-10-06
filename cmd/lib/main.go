@@ -14,8 +14,18 @@ func main() {
 	path := "/Users/jaswanthpinnepu/Desktop/dfs"
 
 	Master := internal.MakeMaster(path)
-
-	for _, name := range Master.InputFiles {
-		fmt.Println(name)
+	for key, val := range Master.InputFiles {
+		fmt.Println(key, val)
 	}
+
+	done := make(chan int)
+	worker1 := internal.MakeWorker(1, done)
+	worker2 := internal.MakeWorker(2, done)
+	go worker1.Run()
+	go worker2.Run()
+
+	for i := 0; i < 2; i++ {
+		<-done
+	}
+
 }

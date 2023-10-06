@@ -5,6 +5,15 @@ import (
 	"strconv"
 )
 
+type GetTaskArgs struct {
+	X int // see if we need worker id
+}
+
+type GetTaskReply struct {
+	FileName string
+	TaskType Phase
+}
+
 // cook-up a unique socket for the system for rpc calls
 // to communicate.
 func masterSock() string {

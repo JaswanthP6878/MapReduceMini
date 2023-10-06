@@ -7,25 +7,58 @@ import (
 	"net/http"
 	"net/rpc"
 	"os"
+	"sync"
 )
 
 type Master struct {
-	InputFiles []string
+	InputFiles map[string]bool
 	phase      Phase
+	sync.Mutex
 }
 
-func (m *Master) AllocateTask() {
-	if m.phase == Map_phase {
-		// allocate a task to worker for map
-		// rpc call to a worker
-	} else {
-		// allocate a reduce task to worker
-	}
-}
+// return filename and phase for the worker
+// func (m *Master) AllocateTask() (string, Phase) {
+// 	if m.phase == Map_phase {
+// 		m.Lock()
+// 		defer m.Unlock()
+// 		for key, value := range m.InputFiles {
+// 			if value == false {
+// 				m.InputFiles[key] = true // assuming that tasks dont fail at all
+// 				return key, m.phase
+// 			}
+// 		}
+// 	} else {
+// 		// allocate a reduce task to worker
+// 	}
 
-// func (m *Master) (argType T1, replyType *T2) error {
-
+// 	return "", 0
 // }
+
+// testing not actual code.
+func (m *Master) AllocateMapTask() (string, Phase) {
+	m.Lock()
+	defer m.Unlock()
+	for key, value := range m.InputFiles {
+		if !value {
+			m.InputFiles[key] = true // assuming that tasks dont fail at all
+			return key, m.phase
+		}
+	}
+	fmt.Println("Map phase completed")
+	return "", 1
+}
+
+// task request by worker
+func (m *Master) GetTask(args GetTaskArgs, reply *GetTaskReply) error {
+	_ = args.X
+
+	fileName, phase := m.AllocateMapTask()
+	reply.FileName = fileName
+	reply.TaskType = phase
+
+	return nil
+
+}
 
 func (m *Master) server() {
 	rpc.Register(m)
@@ -46,12 +79,14 @@ func MakeMaster(inputFilesPath string) *Master {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	readfiles := []string{}
+	mappedFiles := make(map[string]bool)
 	for _, file := range files {
 		filename := fmt.Sprintf("%s/%s", inputFilesPath, file.Name())
-		readfiles = append(readfiles, filename)
+		mappedFiles[filename] = false
+
 	}
-	m := Master{InputFiles: readfiles, phase: Map_phase}
+	//create the Master with initially in map phase.
+	m := Master{InputFiles: mappedFiles, phase: Map_phase}
 	m.server()
 	return &m
 
