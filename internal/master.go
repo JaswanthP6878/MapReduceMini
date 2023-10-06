@@ -22,16 +22,15 @@ type Master struct {
 // 		m.Lock()
 // 		defer m.Unlock()
 // 		for key, value := range m.InputFiles {
-// 			if value == false {
+// 			if !value {
 // 				m.InputFiles[key] = true // assuming that tasks dont fail at all
 // 				return key, m.phase
 // 			}
 // 		}
-// 	} else {
-// 		// allocate a reduce task to worker
+// 		fmt.Println("Map phase completed")
+// 		return "", 1
 // 	}
 
-// 	return "", 0
 // }
 
 // testing not actual code.
@@ -45,7 +44,8 @@ func (m *Master) AllocateMapTask() (string, Phase) {
 		}
 	}
 	fmt.Println("Map phase completed")
-	return "", 1
+	return "", End_phase
+
 }
 
 // task request by worker

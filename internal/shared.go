@@ -5,8 +5,9 @@ type Phase int
 
 const (
 	Map_phase Phase = iota
+	Merge_phase
 	Reduce_phase
-	Completed_phase
+	End_phase
 )
 
 // worker phase

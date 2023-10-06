@@ -13,10 +13,7 @@ func main() {
 	// assume files are in ~/desktop/dfs
 	path := "/Users/jaswanthpinnepu/Desktop/dfs"
 
-	Master := internal.MakeMaster(path)
-	for key, val := range Master.InputFiles {
-		fmt.Println(key, val)
-	}
+	_ = internal.MakeMaster(path)
 
 	done := make(chan int)
 	worker1 := internal.MakeWorker(1, done)
@@ -25,7 +22,7 @@ func main() {
 	go worker2.Run()
 
 	for i := 0; i < 2; i++ {
-		<-done
+		<-done // blocking join operation
 	}
 
 }

@@ -8,9 +8,17 @@ import (
 
 type Worker struct {
 	id   int
-	done chan int
+	done chan int // sends done signal to the main function not master
 }
 
+// intermediate files location
+const iR_dir string = "/Users/jaswanthpinnepu/Desktop/irfs"
+
+// func (w *Worker) work(p Phase, reply GetTaskReply) {
+
+// }
+
+// loop of worker lifespan
 func (w *Worker) Run() {
 	for {
 		args := GetTaskArgs{X: 1}
@@ -18,10 +26,9 @@ func (w *Worker) Run() {
 		response := call("Master.GetTask", args, &reply)
 		if response {
 			if reply.TaskType != 1 {
-
 				fmt.Println("worker_id", w.id, "reading..", reply.FileName, reply.TaskType)
 			} else {
-				fmt.Println("map files have been completed")
+				fmt.Println("map files have been read")
 				break
 			}
 		} else {
