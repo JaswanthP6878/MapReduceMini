@@ -7,7 +7,6 @@ import (
 )
 
 func main() {
-
 	// lets start with 1 worker and 1 master.
 	fmt.Println("Starting Map reduce tasks")
 
@@ -19,5 +18,4 @@ func main() {
 	for _, name := range Master.InputFiles {
 		fmt.Println(name)
 	}
-
 }
