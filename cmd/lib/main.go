@@ -14,18 +14,25 @@ func main() {
 	// assume files are in ~/desktop/dfs
 	path := "/Users/jaswanthpinnepu/Desktop/dfs"
 
+	// worker_count
+	var worker_count int = 2
+
 	master := internal.MakeMaster(path)
 
 	done := make(chan int)
-	worker1 := internal.MakeWorker(1, done)
-	worker2 := internal.MakeWorker(2, done)
+	workers := []*internal.Worker{}
+	for i := 0; i < worker_count; i++ {
+		workers = append(workers, internal.MakeWorker(i+1, done))
+	}
 
 	start := time.Now()
 
-	go worker1.Run()
-	go worker2.Run()
-
-	for i := 0; i < 1; i++ {
+	// worker run
+	for _, worker := range workers {
+		go worker.Run()
+	}
+	//  do blocking for both
+	for i := 0; i < worker_count; i++ {
 		<-done // blocking join operation
 	}
 

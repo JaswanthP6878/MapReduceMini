@@ -58,9 +58,9 @@ func (m *Master) GetTask(args GetTaskArgs, reply *GetTaskReply) error {
 	_ = args.X
 	var fileName string
 	var phase Phase
-	if m.phase == Map_phase {
-		fileName, phase = m.AllocateMapTask()
-	}
+	// if m.phase == Map_phase {
+	fileName, phase = m.AllocateMapTask()
+	// }
 	// else if m.phase == Reduce_phase {
 	// 	// fileName, phase = m.AllocateReduceTask()
 	// }
