@@ -14,6 +14,15 @@ type GetTaskReply struct {
 	TaskType Phase
 }
 
+// setting IR files to master
+type SetIRfileArgs struct {
+	FileName string
+}
+
+type SetIRFileReply struct {
+	Ok int
+}
+
 // cook-up a unique socket for the system for rpc calls
 // to communicate.
 func masterSock() string {

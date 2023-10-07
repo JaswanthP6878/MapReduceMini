@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"mapreduce.jaswantp.com/internal"
 )
@@ -13,16 +14,24 @@ func main() {
 	// assume files are in ~/desktop/dfs
 	path := "/Users/jaswanthpinnepu/Desktop/dfs"
 
-	_ = internal.MakeMaster(path)
+	master := internal.MakeMaster(path)
 
 	done := make(chan int)
 	worker1 := internal.MakeWorker(1, done)
 	worker2 := internal.MakeWorker(2, done)
+
+	start := time.Now()
+
 	go worker1.Run()
 	go worker2.Run()
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 1; i++ {
 		<-done // blocking join operation
 	}
 
+	fmt.Printf("Total time: %v\n", time.Since(start).Seconds())
+	// get ir files(testing)
+	for key := range master.IRfiles {
+		fmt.Println(key)
+	}
 }
