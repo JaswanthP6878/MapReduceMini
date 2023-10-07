@@ -21,7 +21,7 @@ const iR_dir string = "/Users/jaswanthpinnepu/Desktop/irfs"
 func (w *Worker) Mapwork(fileName string) (string, error) {
 	ir_file := fmt.Sprintf("%v/mr-%v-out", iR_dir, w.id)
 
-	// if IR file does not exist create it
+	//if IR file does not exist create it
 	if _, err := os.Stat(ir_file); err != nil {
 		_, err := os.Create(ir_file)
 		if err != nil {
@@ -61,24 +61,23 @@ func (w *Worker) Run() {
 		args := GetTaskArgs{X: 1}
 		reply := GetTaskReply{}
 		response := call("Master.GetTask", args, &reply)
-		if response {
-			if reply.TaskType == Map_phase { // map phase
-				var err error
-				fmt.Println("worker_id", w.id, "reading..", reply.FileName, reply.TaskType)
-				irFileName, err = w.Mapwork(reply.FileName)
-				if err != nil {
-					fmt.Printf("Error occured in worker, %s", err)
-					break
-				}
-			} else { // map phase has completed
-				args := SetIRfileArgs{FileName: irFileName}
-				reply := SetIRFileReply{}
-				call("Master.SetIRFile", args, &reply)
-				fmt.Println("mapping completed! closing worker")
+		if !response {
+			fmt.Println("RPC call failed!!")
+			break
+		}
+		if reply.TaskType == Map_phase { // map phase
+			var err error
+			fmt.Println("worker_id", w.id, "reading..", reply.FileName, reply.TaskType)
+			irFileName, err = w.Mapwork(reply.FileName)
+			if err != nil {
+				fmt.Printf("Error occured in worker, %s", err)
 				break
 			}
-		} else {
-			fmt.Println("RPC call failed!!")
+		} else { // map phase has completed
+			args := SetIRfileArgs{FileName: irFileName}
+			reply := SetIRFileReply{}
+			call("Master.SetIRFile", args, &reply)
+			fmt.Println("mapping completed! closing worker")
 			break
 		}
 	}
