@@ -36,8 +36,6 @@ type Master struct {
 
 // testing not actual code.
 func (m *Master) AllocateMapTask() (string, Phase) {
-	m.Lock()
-	defer m.Unlock()
 	for key, value := range m.InputFiles {
 		if !value {
 			m.InputFiles[key] = true // assuming that tasks dont fail at all
@@ -55,12 +53,14 @@ func (m *Master) AllocateMapTask() (string, Phase) {
 
 // task request by worker
 func (m *Master) GetTask(args GetTaskArgs, reply *GetTaskReply) error {
+	m.Lock()
+	defer m.Unlock()
 	_ = args.X
 	var fileName string
 	var phase Phase
-	// if m.phase == Map_phase {
-	fileName, phase = m.AllocateMapTask()
-	// }
+	if m.phase == Map_phase {
+		fileName, phase = m.AllocateMapTask()
+	}
 	// else if m.phase == Reduce_phase {
 	// 	// fileName, phase = m.AllocateReduceTask()
 	// }
