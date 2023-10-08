@@ -2,6 +2,7 @@
 ---
 ###### Progress
 - [x] Map part and Intermediate Data generation
+- [-] Transitioning all workers from one phase to another
 - [ ] Intermediate Data handling
 - [ ] Reduce part
 
