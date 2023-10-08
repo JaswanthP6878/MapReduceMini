@@ -23,7 +23,7 @@ type SetIRFileReply struct {
 	Ok int
 }
 
-// cook-up a unique socket for the system for rpc calls
+// cook-up a unix socket for the system for rpc calls
 // to communicate.
 func masterSock() string {
 	s := "/var/tmp/824-mr-"

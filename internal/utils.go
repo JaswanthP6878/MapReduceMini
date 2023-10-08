@@ -11,6 +11,9 @@ type KeyValue struct {
 	Value string
 }
 
+// Divide the input file directory based worker count
+func splitInputFiles(dir string)
+
 // util functions:
 // The Map and reduce functions are here
 // assume we are passing them as plugins
