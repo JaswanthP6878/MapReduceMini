@@ -10,7 +10,7 @@ type GetTaskArgs struct {
 }
 
 type GetTaskReply struct {
-	FileName string
+	FileName []string
 	TaskType Phase
 }
 
@@ -21,6 +21,15 @@ type SetIRfileArgs struct {
 
 type SetIRFileReply struct {
 	Ok int
+}
+
+// map task completed reply
+type MapTaskCompletedArgs struct {
+	IrfileName string
+	WorkerId   int
+}
+
+type MapTaskCompletedReply struct {
 }
 
 // cook-up a unix socket for the system for rpc calls

@@ -16,6 +16,7 @@ type Master struct {
 	phase        Phase
 	IRfiles      map[string]bool
 	Worker_Count int
+	WorkerStatus map[int]WorkerPhase
 	sync.Mutex
 }
 
@@ -37,23 +38,29 @@ type Master struct {
 // }
 
 // testing not actual code.
-func (m *Master) AllocateMapTask() (string, Phase) {
-	for key, value := range m.InputFiles {
-		if !value {
-			m.InputFiles[key] = true // assuming that tasks dont fail at all
-			return key, Map_phase
-		}
-	}
-	// need to write better logic here have to see why its failing
-	m.Worker_Count -= 1
-	if m.Worker_Count == 0 {
-		m.phase = End_phase
-		fmt.Println("Reached end for the map phase for all workers")
-		return "", End_phase
-	} else if m.Worker_Count != 0 {
-		return "", Wait
-	}
-	return "", End_phase
+// func (m *Master) AllocateMapTask() (string, Phase) {
+// 	for key, value := range m.InputFiles {
+// 		if !value {
+// 			m.InputFiles[key] = true // assuming that tasks dont fail at all
+// 			return key, Map_phase
+// 		}
+// 	}
+// 	// need to write better logic here have to see why its failing
+// 	m.Worker_Count -= 1
+// 	if m.Worker_Count == 0 {
+// 		m.phase = End_phase
+// 		fmt.Println("Reached end for the map phase for all workers")
+// 		return "", End_phase
+// 	} else if m.Worker_Count != 0 {
+// 		return "", Wait
+// 	}
+// 	return "", End_phase
+
+// }
+
+func (m *Master) AllocateMapTask(workerID int) []string {
+	files := m.workerFiles[workerID]
+	return files
 
 }
 
@@ -64,26 +71,20 @@ func (m *Master) AllocateReduceTask(workerID int) (string, Phase) {
 
 // task request by worker
 func (m *Master) GetTask(args GetTaskArgs, reply *GetTaskReply) error {
+	// if the task is not set to IDLE allocate task
 	m.Lock()
 	defer m.Unlock()
 	workerId := args.WorkerID
-	var fileName string
 	var phase Phase
 	if m.phase == Map_phase {
-		fileName, phase = m.AllocateMapTask()
-	} else if m.phase == End_phase {
-		fileName, phase = m.AllocateReduceTask(workerId)
-	} else {
-		reply.FileName = fileName
-		reply.TaskType = Wait
-		return nil
+		files := m.AllocateMapTask(workerId)
+		reply.FileName = files
+		reply.TaskType = phase
 	}
-	reply.FileName = fileName
-	reply.TaskType = phase
 	return nil
 }
 
-func (m *Master) SetValue(fileName string) error {
+func (m *Master) setIrValue(fileName string) error {
 	m.Lock()
 	defer m.Unlock()
 	m.IRfiles[fileName] = false // adding IR files
@@ -92,7 +93,7 @@ func (m *Master) SetValue(fileName string) error {
 
 // set The IR file from  the worker:
 func (m *Master) SetIRFile(args SetIRfileArgs, reply *SetIRFileReply) error {
-	m.SetValue(args.FileName)
+	m.setIrValue(args.FileName)
 	reply.Ok = 1
 	return nil
 }
@@ -118,12 +119,12 @@ func MakeMaster(inputFilesPath string, workerCount int) *Master {
 	}
 
 	workerFiles := splitInputDir(inputFilesPath, workerCount)
-	for key, files := range workerFiles {
-		fmt.Println(key)
-		for _, file := range files {
-			fmt.Println(file)
-		}
-	}
+	// for key, files := range workerFiles {
+	// 	fmt.Println(key)
+	// 	for _, file := range files {
+	// 		fmt.Println(file)
+	// 	}
+	// }
 	mappedFiles := make(map[string]bool)
 	irFiles := make(map[string]bool)
 	for _, file := range files {

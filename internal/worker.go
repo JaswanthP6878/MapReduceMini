@@ -19,7 +19,7 @@ type Worker struct {
 const iR_dir string = "/Users/jaswanthpinnepu/Desktop/irfs"
 
 // process input file and returns the IR file location
-func (w *Worker) Mapwork(fileName string) (string, error) {
+func (w *Worker) Mapwork(files []string) (string, error) {
 	ir_file := fmt.Sprintf("%v/mr-%v-out", iR_dir, w.id)
 
 	//if IR file does not exist create it
@@ -30,27 +30,29 @@ func (w *Worker) Mapwork(fileName string) (string, error) {
 			return "", err
 		}
 	}
-	file, err := os.Open(fileName)
-	if err != nil {
-		fmt.Println("File could not be opened")
-		return "", err
-	}
-	defer file.Close()
-	filedata, _ := io.ReadAll(file)
-
-	// call the Map function...
-	kv := Map(fileName, string(filedata))
-
-	Irfile, _ := os.OpenFile(ir_file, os.O_RDWR, os.ModeAppend)
-	encoder := json.NewEncoder(Irfile)
-	for _, value := range kv {
-		err = encoder.Encode(value)
+	for _, fileName := range files {
+		file, err := os.Open(fileName)
 		if err != nil {
-			fmt.Println("encoding Error")
+			fmt.Println("File could not be opened")
 			return "", err
 		}
+		defer file.Close()
+		filedata, _ := io.ReadAll(file)
+
+		// call the Map function...
+		kv := Map(fileName, string(filedata))
+
+		Irfile, _ := os.OpenFile(ir_file, os.O_RDWR, os.ModeAppend)
+		encoder := json.NewEncoder(Irfile)
+		for _, value := range kv {
+			err = encoder.Encode(value)
+			if err != nil {
+				fmt.Println("encoding Error")
+				return "", err
+			}
+		}
+		defer Irfile.Close()
 	}
-	defer Irfile.Close()
 	return ir_file, nil
 
 }
@@ -69,12 +71,13 @@ func (w *Worker) Run() {
 
 		if reply.TaskType == Map_phase { // map phase
 			var err error
-			fmt.Println("worker_id", w.id, "reading..", reply.FileName, reply.TaskType)
+			fmt.Println("worker_id", w.id, "reading.. files", reply.TaskType)
 			irFileName, err = w.Mapwork(reply.FileName)
 			if err != nil {
 				fmt.Printf("Error occured in worker, %s", err)
 				break
 			}
+
 		} else if reply.TaskType == End_phase { // map phase has completed
 			args := SetIRfileArgs{FileName: irFileName}
 			reply := SetIRFileReply{}
