@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"unicode"
@@ -12,6 +14,22 @@ type KeyValue struct {
 }
 
 // Divide the input file directory based worker count
+func splitInputDir(path string, worker_count int) map[int][]string {
+	files, err := os.ReadDir(path)
+	if err != nil {
+		fmt.Println("Error reading dir", err)
+	}
+
+	workerFiles := map[int][]string{}
+	for i := range files {
+		if _, exists := workerFiles[(i%worker_count)+1]; !exists {
+			workerFiles[(i%worker_count)+1] = []string{}
+		}
+		workerFiles[(i%worker_count)+1] = append(workerFiles[(i%worker_count)+1], fmt.Sprintf("%s/%s", path, files[i].Name()))
+	}
+	return workerFiles
+
+}
 
 // util functions:
 // The Map and reduce functions are here

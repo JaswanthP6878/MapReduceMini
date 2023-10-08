@@ -15,7 +15,7 @@ func main() {
 	path := "/Users/jaswanthpinnepu/Desktop/dfs"
 
 	// worker_count
-	var worker_count int = 2
+	var worker_count int = 3
 	master := internal.MakeMaster(path, worker_count)
 
 	done := make(chan int)

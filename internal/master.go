@@ -12,6 +12,7 @@ import (
 
 type Master struct {
 	InputFiles   map[string]bool
+	workerFiles  map[int][]string
 	phase        Phase
 	IRfiles      map[string]bool
 	Worker_Count int
@@ -115,15 +116,22 @@ func MakeMaster(inputFilesPath string, workerCount int) *Master {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
+
+	workerFiles := splitInputDir(inputFilesPath, workerCount)
+	for key, files := range workerFiles {
+		fmt.Println(key)
+		for _, file := range files {
+			fmt.Println(file)
+		}
+	}
 	mappedFiles := make(map[string]bool)
 	irFiles := make(map[string]bool)
 	for _, file := range files {
 		filename := fmt.Sprintf("%s/%s", inputFilesPath, file.Name())
 		mappedFiles[filename] = false
-
 	}
 	//create the Master with initially in map phase.
-	m := Master{InputFiles: mappedFiles, phase: Map_phase, IRfiles: irFiles, Worker_Count: workerCount}
+	m := Master{InputFiles: mappedFiles, phase: Map_phase, IRfiles: irFiles, Worker_Count: workerCount, workerFiles: workerFiles}
 	m.server()
 	return &m
 
