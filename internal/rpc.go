@@ -6,7 +6,7 @@ import (
 )
 
 type GetTaskArgs struct {
-	X int // see if we need worker id
+	WorkerID int // see if we need worker id
 }
 
 type GetTaskReply struct {

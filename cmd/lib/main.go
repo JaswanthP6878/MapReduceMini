@@ -16,8 +16,7 @@ func main() {
 
 	// worker_count
 	var worker_count int = 2
-
-	master := internal.MakeMaster(path)
+	master := internal.MakeMaster(path, worker_count)
 
 	done := make(chan int)
 	workers := []*internal.Worker{}

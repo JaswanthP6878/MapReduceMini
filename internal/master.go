@@ -11,9 +11,10 @@ import (
 )
 
 type Master struct {
-	InputFiles map[string]bool
-	phase      Phase
-	IRfiles    map[string]bool
+	InputFiles   map[string]bool
+	phase        Phase
+	IRfiles      map[string]bool
+	Worker_Count int
 	sync.Mutex
 }
 
@@ -42,28 +43,40 @@ func (m *Master) AllocateMapTask() (string, Phase) {
 			return key, Map_phase
 		}
 	}
-	fmt.Println("Map phase completed")
+	// need to write better logic here have to see why its failing
+	m.Worker_Count -= 1
+	if m.Worker_Count == 0 {
+		m.phase = End_phase
+		fmt.Println("Reached end for the map phase for all workers")
+		return "", End_phase
+	} else if m.Worker_Count != 0 {
+		return "", Wait
+	}
 	return "", End_phase
 
 }
 
-// func (m *Master) AllocateReduceTask() (string, Phase) {
-
-// }
+func (m *Master) AllocateReduceTask(workerID int) (string, Phase) {
+	filePath := fmt.Sprintf("mr-%v-out", workerID)
+	return filePath, Reduce_phase
+}
 
 // task request by worker
 func (m *Master) GetTask(args GetTaskArgs, reply *GetTaskReply) error {
 	m.Lock()
 	defer m.Unlock()
-	_ = args.X
+	workerId := args.WorkerID
 	var fileName string
 	var phase Phase
 	if m.phase == Map_phase {
 		fileName, phase = m.AllocateMapTask()
+	} else if m.phase == End_phase {
+		fileName, phase = m.AllocateReduceTask(workerId)
+	} else {
+		reply.FileName = fileName
+		reply.TaskType = Wait
+		return nil
 	}
-	// else if m.phase == Reduce_phase {
-	// 	// fileName, phase = m.AllocateReduceTask()
-	// }
 	reply.FileName = fileName
 	reply.TaskType = phase
 	return nil
@@ -96,7 +109,7 @@ func (m *Master) server() {
 	go http.Serve(l, nil)
 }
 
-func MakeMaster(inputFilesPath string) *Master {
+func MakeMaster(inputFilesPath string, workerCount int) *Master {
 	files, err := os.ReadDir(inputFilesPath)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -110,7 +123,7 @@ func MakeMaster(inputFilesPath string) *Master {
 
 	}
 	//create the Master with initially in map phase.
-	m := Master{InputFiles: mappedFiles, phase: Map_phase, IRfiles: irFiles}
+	m := Master{InputFiles: mappedFiles, phase: Map_phase, IRfiles: irFiles, Worker_Count: workerCount}
 	m.server()
 	return &m
 

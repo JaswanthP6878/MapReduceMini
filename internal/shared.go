@@ -8,6 +8,7 @@ const (
 	Merge_phase
 	Reduce_phase
 	End_phase
+	Wait
 )
 
 // worker phase

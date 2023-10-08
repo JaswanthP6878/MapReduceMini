@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/rpc"
 	"os"
+	"time"
 )
 
 type Worker struct {
@@ -58,13 +59,14 @@ func (w *Worker) Mapwork(fileName string) (string, error) {
 func (w *Worker) Run() {
 	var irFileName string
 	for {
-		args := GetTaskArgs{X: 1}
+		args := GetTaskArgs{WorkerID: w.id}
 		reply := GetTaskReply{}
 		response := call("Master.GetTask", args, &reply)
 		if !response {
 			fmt.Println("RPC call failed!!")
 			break
 		}
+
 		if reply.TaskType == Map_phase { // map phase
 			var err error
 			fmt.Println("worker_id", w.id, "reading..", reply.FileName, reply.TaskType)
@@ -73,13 +75,20 @@ func (w *Worker) Run() {
 				fmt.Printf("Error occured in worker, %s", err)
 				break
 			}
-		} else { // map phase has completed
+		} else if reply.TaskType == End_phase { // map phase has completed
 			args := SetIRfileArgs{FileName: irFileName}
 			reply := SetIRFileReply{}
 			call("Master.SetIRFile", args, &reply)
-			fmt.Println("mapping completed! closing worker")
-			break
+			fmt.Printf("sending IR file name to master from worker %v\n", w.id)
+			// break
+
+		} else if reply.TaskType == Reduce_phase {
+			fmt.Printf("File name for the task is: %v for worker id, %v\n", reply.FileName, w.id)
+			break // stopping the worker
+		} else if reply.TaskType == Wait {
+			time.Sleep(3 * time.Second)
 		}
+
 	}
 	fmt.Println("worker has ended!!")
 	w.done <- 1
