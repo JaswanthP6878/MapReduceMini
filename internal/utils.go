@@ -12,7 +12,6 @@ type KeyValue struct {
 }
 
 // Divide the input file directory based worker count
-func splitInputFiles(dir string)
 
 // util functions:
 // The Map and reduce functions are here
