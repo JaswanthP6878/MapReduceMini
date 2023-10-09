@@ -77,6 +77,7 @@ func (m *Master) GetTask(args GetTaskArgs, reply *GetTaskReply) error {
 
 	workerId := args.WorkerID
 
+	// waiting for all the workers to complete before we move to next phase
 	if idle := m.getAllWorkerStatus(IDLE); idle {
 		m.phase = End_phase // testing map phase
 		m.setAllWorkerStatus(Processing)
@@ -92,7 +93,9 @@ func (m *Master) GetTask(args GetTaskArgs, reply *GetTaskReply) error {
 		files := m.AllocateMapTask(workerId)
 		reply.FileName = files
 		reply.TaskType = Map_phase
-	} else if m.phase == End_phase {
+
+	} else if m.phase == End_phase { // have to change to Reduce Phase
+
 		reply.FileName = nil
 		reply.TaskType = End_phase
 	}
