@@ -59,7 +59,6 @@ func (w *Worker) Mapwork(files []string) (string, error) {
 
 // loop of worker lifespan
 func (w *Worker) Run() {
-	var irFileName string
 	for {
 		args := GetTaskArgs{WorkerID: w.id}
 		reply := GetTaskReply{}
@@ -72,28 +71,24 @@ func (w *Worker) Run() {
 		if reply.TaskType == Map_phase { // map phase
 			var err error
 			fmt.Println("worker_id", w.id, "reading.. files", reply.TaskType)
-			irFileName, err = w.Mapwork(reply.FileName)
+			irFileName, err := w.Mapwork(reply.FileName)
 			if err != nil {
 				fmt.Printf("Error occured in worker, %s", err)
 				break
 			}
-
-		} else if reply.TaskType == End_phase { // map phase has completed
-			args := SetIRfileArgs{FileName: irFileName}
+			// send a signal that map work is completed
+			args := SetIRfileArgs{FileName: irFileName, WorkerId: w.id}
 			reply := SetIRFileReply{}
 			call("Master.SetIRFile", args, &reply)
-			fmt.Printf("sending IR file name to master from worker %v\n", w.id)
-			// break
 
-		} else if reply.TaskType == Reduce_phase {
-			fmt.Printf("File name for the task is: %v for worker id, %v\n", reply.FileName, w.id)
-			break // stopping the worker
 		} else if reply.TaskType == Wait {
 			time.Sleep(3 * time.Second)
-		}
 
+		} else if reply.TaskType == End_phase {
+			break
+		}
 	}
-	fmt.Println("worker has ended!!")
+	fmt.Printf("worker %v  has ended!!\n", w.id)
 	w.done <- 1
 }
 

@@ -74,12 +74,27 @@ func (m *Master) GetTask(args GetTaskArgs, reply *GetTaskReply) error {
 	// if the task is not set to IDLE allocate task
 	m.Lock()
 	defer m.Unlock()
+
 	workerId := args.WorkerID
-	var phase Phase
+
+	if idle := m.getAllWorkerStatus(IDLE); idle {
+		m.phase = End_phase // testing map phase
+		m.setAllWorkerStatus(Processing)
+	}
+
+	if m.WorkerStatus[workerId] == IDLE {
+		reply.FileName = nil
+		reply.TaskType = Wait
+		return nil
+	}
+
 	if m.phase == Map_phase {
 		files := m.AllocateMapTask(workerId)
 		reply.FileName = files
-		reply.TaskType = phase
+		reply.TaskType = Map_phase
+	} else if m.phase == End_phase {
+		reply.FileName = nil
+		reply.TaskType = End_phase
 	}
 	return nil
 }
@@ -91,10 +106,35 @@ func (m *Master) setIrValue(fileName string) error {
 	return nil
 }
 
+func (m *Master) setWorkerStatus(workerId int, status WorkerPhase) error {
+	m.Lock()
+	defer m.Unlock()
+	m.WorkerStatus[workerId] = status
+	return nil
+}
+
 // set The IR file from  the worker:
+// worker calls after completing map task
 func (m *Master) SetIRFile(args SetIRfileArgs, reply *SetIRFileReply) error {
 	m.setIrValue(args.FileName)
+	m.setWorkerStatus(args.WorkerId, IDLE) // set so that it can wait for other workers
 	reply.Ok = 1
+	return nil
+}
+
+func (m *Master) getAllWorkerStatus(status WorkerPhase) bool {
+	for _, val := range m.WorkerStatus {
+		if val != status {
+			return false
+		}
+	}
+	return true
+}
+
+func (m *Master) setAllWorkerStatus(status WorkerPhase) error {
+	for key := range m.WorkerStatus {
+		m.WorkerStatus[key] = status
+	}
 	return nil
 }
 
@@ -132,7 +172,11 @@ func MakeMaster(inputFilesPath string, workerCount int) *Master {
 		mappedFiles[filename] = false
 	}
 	//create the Master with initially in map phase.
-	m := Master{InputFiles: mappedFiles, phase: Map_phase, IRfiles: irFiles, Worker_Count: workerCount, workerFiles: workerFiles}
+	workersStartPhase := map[int]WorkerPhase{}
+	for i := 1; i <= workerCount; i++ {
+		workersStartPhase[i] = Start
+	}
+	m := Master{InputFiles: mappedFiles, phase: Map_phase, IRfiles: irFiles, Worker_Count: workerCount, workerFiles: workerFiles, WorkerStatus: workersStartPhase}
 	m.server()
 	return &m
 

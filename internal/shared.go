@@ -15,7 +15,8 @@ const (
 type WorkerPhase int
 
 const (
-	IDLE WorkerPhase = iota
+	Start WorkerPhase = iota
+	IDLE
 	Processing
 	Done
 )
