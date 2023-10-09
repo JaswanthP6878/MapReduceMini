@@ -1,6 +1,6 @@
 ### Map Reduce tool 
 
-A single-server Map-reduce tool for data processing(WIP)
+<span style="font-size:0.7em">A single-server Map-reduce tool for data processing(WIP)</span>
 ---
 ##### Progress
 
