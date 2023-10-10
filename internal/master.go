@@ -17,6 +17,7 @@ type Master struct {
 	IRfiles      []string
 	Worker_Count int
 	WorkerStatus map[int]WorkerPhase
+	OutFiles     []string
 	sync.Mutex
 }
 
@@ -41,6 +42,7 @@ func (m *Master) GetTask(args GetTaskArgs, reply *GetTaskReply) error {
 
 	// waiting for all the workers to complete before we move to next phase
 	if idle := m.getAllWorkerStatus(IDLE); idle {
+		fmt.Println("map phase completed.. Reduce phase starting")
 		m.phase = End_phase // testing map phase
 		m.setAllWorkerStatus(Processing)
 	}
@@ -103,6 +105,13 @@ func (m *Master) setAllWorkerStatus(status WorkerPhase) error {
 	return nil
 }
 
+func (m *Master) EndMR(args EndMRArgs, reply *EndMRReply) error {
+	m.Lock()
+	defer m.Unlock()
+	m.OutFiles = append(m.OutFiles, args.OutFile)
+	return nil
+}
+
 func (m *Master) server() {
 	rpc.Register(m)
 	rpc.HandleHTTP()
@@ -124,12 +133,6 @@ func MakeMaster(inputFilesPath string, workerCount int) *Master {
 	}
 
 	workerFiles := splitInputDir(inputFilesPath, workerCount)
-	// for key, files := range workerFiles {
-	// 	fmt.Println(key)
-	// 	for _, file := range files {
-	// 		fmt.Println(file)
-	// 	}
-	// }
 	mappedFiles := make(map[string]bool)
 	irFiles := []string{}
 	for _, file := range files {
@@ -141,7 +144,17 @@ func MakeMaster(inputFilesPath string, workerCount int) *Master {
 	for i := 1; i <= workerCount; i++ {
 		workersStartPhase[i] = Start
 	}
-	m := Master{InputFiles: mappedFiles, phase: Map_phase, IRfiles: irFiles, Worker_Count: workerCount, workerFiles: workerFiles, WorkerStatus: workersStartPhase}
+	outfiles := []string{}
+
+	m := Master{
+		InputFiles:   mappedFiles,
+		phase:        Map_phase,
+		IRfiles:      irFiles,
+		Worker_Count: workerCount,
+		workerFiles:  workerFiles,
+		WorkerStatus: workersStartPhase,
+		OutFiles:     outfiles,
+	}
 	m.server()
 	return &m
 

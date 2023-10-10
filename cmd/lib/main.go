@@ -34,8 +34,8 @@ func main() {
 	}
 
 	fmt.Printf("Total time: %v\n", time.Since(start).Seconds())
-	// get ir files(testing)
-	for _, fileName := range master.IRfiles {
+	fmt.Println("The Output files location:")
+	for _, fileName := range master.OutFiles {
 		fmt.Println(fileName)
 	}
 }

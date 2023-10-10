@@ -62,7 +62,7 @@ func (w *Worker) Mapwork(files []string) ([]string, error) {
 		fd, err := os.OpenFile(irfile, os.O_RDWR, os.ModeAppend)
 		fdarray = append(fdarray, fd)
 		if err != nil {
-			fmt.Println("Error while openning file")
+			fmt.Println("Error while opening file")
 			return []string{}, err
 		}
 		encoder := json.NewEncoder(fd)
@@ -146,7 +146,7 @@ func (w *Worker) reduceWork(files []string) (string, error) {
 		i = j
 	}
 	ofile.Close()
-	return "", nil
+	return outFile, nil
 }
 
 // loop of worker lifespan
@@ -162,7 +162,7 @@ func (w *Worker) Run() {
 
 		if reply.TaskType == Map_phase { // map phase
 			var err error
-			fmt.Println("worker_id", w.id, "reading.. files", reply.TaskType)
+			fmt.Println("worker_id", w.id, "map phase..., reading input split", reply.TaskType)
 			irFiles, err := w.Mapwork(reply.FileName)
 			if err != nil {
 				fmt.Printf("Error occured in worker, %s", err)
@@ -177,9 +177,15 @@ func (w *Worker) Run() {
 			time.Sleep(1 * time.Second)
 
 		} else if reply.TaskType == End_phase {
-			w.reduceWork(reply.FileName)
+			outFile, err := w.reduceWork(reply.FileName)
+			if err != nil {
+				fmt.Printf("Reduce phase failed for worker %v", w.id)
+				break
+			}
+			args := EndMRArgs{OutFile: outFile}
+			reply := EndMRReply{}
+			call("Master.EndMR", args, &reply)
 			break
-
 		}
 	}
 	fmt.Printf("worker %v  has ended!!\n", w.id)

@@ -33,6 +33,13 @@ type MapTaskCompletedArgs struct {
 type MapTaskCompletedReply struct {
 }
 
+type EndMRArgs struct {
+	OutFile string
+}
+
+type EndMRReply struct {
+}
+
 // cook-up a unix socket for the system for rpc calls
 // to communicate.
 func masterSock() string {
