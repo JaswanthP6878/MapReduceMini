@@ -30,6 +30,7 @@ func (w *Worker) Mapwork(files []string) (string, error) {
 			return "", err
 		}
 	}
+
 	for _, fileName := range files {
 		file, err := os.Open(fileName)
 		if err != nil {
@@ -82,7 +83,7 @@ func (w *Worker) Run() {
 			call("Master.SetIRFile", args, &reply)
 
 		} else if reply.TaskType == Wait {
-			time.Sleep(3 * time.Second)
+			time.Sleep(1 * time.Second)
 
 		} else if reply.TaskType == End_phase {
 			break
