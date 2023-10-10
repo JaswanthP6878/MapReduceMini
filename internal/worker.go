@@ -64,8 +64,32 @@ func (w *Worker) Mapwork(files []string) (string, error) {
 }
 
 // reduce function
-// func (w *Worker) reduceWork(files []string) (string, error) {
-// }
+// use the hashKey to see what worker reads and processes what key.
+func (w *Worker) reduceWork(files []string) (string, error) {
+	for _, file := range files {
+		openFile, err := os.Open(file)
+		if err != nil {
+			fmt.Printf("Error occured while reading file!")
+			return "", err
+		}
+		kva := []KeyValue{}
+		// reading kv pairs
+		dec := json.NewDecoder(openFile)
+		for {
+			var kv KeyValue
+			if err := dec.Decode(&kv); err != nil {
+				break
+			}
+			kva = append(kva, kv)
+		}
+		// need to do from here
+		// use the ihash function and only apply reduce on the values mapped
+		// to this worker based on worker id
+		// ihash(kv.Key) % worker_count
+	}
+
+	return "", nil
+}
 
 // loop of worker lifespan
 func (w *Worker) Run() {
