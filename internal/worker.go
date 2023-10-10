@@ -19,9 +19,11 @@ type Worker struct {
 
 // intermediate files location
 const iR_dir string = "/Users/jaswanthpinnepu/Desktop/irfs"
+const out_dir string = "/Users/jaswanthpinnepu/Desktop/outfs"
 
 // process input file and returns the IR file location
-func (w *Worker) Mapwork(files []string) (string, error) {
+// sends the IR data files
+func (w *Worker) Mapwork(files []string) ([]string, error) {
 	var irFiles = []string{}
 	for i := 1; i <= w.worker_count; i++ {
 		irFiles = append(irFiles, fmt.Sprintf("%v/mr-%v-%v", iR_dir, w.id, i))
@@ -33,7 +35,7 @@ func (w *Worker) Mapwork(files []string) (string, error) {
 			_, err := os.Create(ir_file)
 			if err != nil {
 				fmt.Printf("IR file cannot be created!")
-				return "", err
+				return []string{}, err
 			}
 		}
 	}
@@ -42,7 +44,7 @@ func (w *Worker) Mapwork(files []string) (string, error) {
 		file, err := os.Open(fileName)
 		if err != nil {
 			fmt.Println("File could not be opened")
-			return "", err
+			return []string{}, err
 		}
 		defer file.Close()
 		filedata, _ := io.ReadAll(file)
@@ -61,7 +63,7 @@ func (w *Worker) Mapwork(files []string) (string, error) {
 		fdarray = append(fdarray, fd)
 		if err != nil {
 			fmt.Println("Error while openning file")
-			return "", err
+			return []string{}, err
 		}
 		encoder := json.NewEncoder(fd)
 		encoderArray = append(encoderArray, *encoder)
@@ -86,33 +88,66 @@ func (w *Worker) Mapwork(files []string) (string, error) {
 	for _, file := range fdarray {
 		file.Close()
 	}
-	return irFiles[0], nil
+	return irFiles, nil
 }
 
 // reduce function
-// use the hashKey to see what worker reads and processes what key.
-// func (w *Worker) reduceWork(files []string) (string, error) {
-// 	kva := []KeyValue{}
-// 	for _, file := range files {
-// 		openFile, err := os.Open(file)
-// 		if err != nil {
-// 			fmt.Printf("Error occured while reading file!")
-// 			return "", err
-// 		}
-// 		// reading kv pairs
-// 		dec := json.NewDecoder(openFile)
-// 		for {
-// 			var kv KeyValue
-// 			if err := dec.Decode(&kv); err != nil {
-// 				break
-// 			}
-// 			kva = append(kva, kv)
-// 		}
-// 		// filter based on hash function
-// 	}
+// files are of the format mr-k-w.id(so have to read all with w.id and parse)
+// and apply reduce
+func (w *Worker) reduceWork(files []string) (string, error) {
+	outFile := fmt.Sprintf("%v/out-%v", out_dir, w.id)
+	ofile, err := os.Create(outFile)
+	if err != nil {
+		fmt.Printf("cannot create outfile\n")
+		return "", nil
+	}
 
-// 	return "", nil
-// }
+	irFiles := []string{}
+	for _, file := range files {
+		// based on the last value of the irFile name
+		if string(file[len(file)-1]) == fmt.Sprintf("%v", w.id) {
+			irFiles = append(irFiles, file)
+		}
+	}
+	irData := []KeyValue{}
+	for _, file := range irFiles {
+		fs, err := os.Open(file)
+		if err != nil {
+			fmt.Printf("reduce task cannot open file")
+			return "", err
+		}
+		dec := json.NewDecoder(fs)
+		for {
+			var kv KeyValue
+			if err := dec.Decode(&kv); err != nil {
+				break
+			}
+			irData = append(irData, kv)
+		}
+	}
+
+	//sorting
+	sort.Sort(ByKey(irData))
+
+	// applying reduce
+	i := 0
+	for i < len(irData) {
+		j := i + 1
+		for j < len(irData) && irData[j].Key == irData[i].Key {
+			j++
+		}
+		values := []string{}
+		for k := i; k < j; k++ {
+			values = append(values, irData[k].Value)
+		}
+		output := Reduce(irData[i].Key, values)
+		// this is the correct format for each line of Reduce output.
+		fmt.Fprintf(ofile, "%v %v\n", irData[i].Key, output)
+		i = j
+	}
+	ofile.Close()
+	return "", nil
+}
 
 // loop of worker lifespan
 func (w *Worker) Run() {
@@ -128,13 +163,13 @@ func (w *Worker) Run() {
 		if reply.TaskType == Map_phase { // map phase
 			var err error
 			fmt.Println("worker_id", w.id, "reading.. files", reply.TaskType)
-			irFileName, err := w.Mapwork(reply.FileName)
+			irFiles, err := w.Mapwork(reply.FileName)
 			if err != nil {
 				fmt.Printf("Error occured in worker, %s", err)
 				break
 			}
 			// send a signal that map work is completed
-			args := SetIRfileArgs{FileName: irFileName, WorkerId: w.id}
+			args := SetIRfileArgs{IRfiles: irFiles, WorkerId: w.id}
 			reply := SetIRFileReply{}
 			call("Master.SetIRFile", args, &reply)
 
@@ -142,7 +177,9 @@ func (w *Worker) Run() {
 			time.Sleep(1 * time.Second)
 
 		} else if reply.TaskType == End_phase {
+			w.reduceWork(reply.FileName)
 			break
+
 		}
 	}
 	fmt.Printf("worker %v  has ended!!\n", w.id)

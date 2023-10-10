@@ -17,7 +17,7 @@ type GetTaskReply struct {
 // setting IR files to master
 type SetIRfileArgs struct {
 	WorkerId int
-	FileName string
+	IRfiles  []string
 }
 
 type SetIRFileReply struct {

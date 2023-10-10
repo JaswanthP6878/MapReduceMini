@@ -14,49 +14,11 @@ type Master struct {
 	InputFiles   map[string]bool
 	workerFiles  map[int][]string
 	phase        Phase
-	IRfiles      map[string]bool
+	IRfiles      []string
 	Worker_Count int
 	WorkerStatus map[int]WorkerPhase
 	sync.Mutex
 }
-
-// return filename and phase for the worker
-// func (m *Master) AllocateTask() (string, Phase) {
-// 	if m.phase == Map_phase {
-// 		m.Lock()
-// 		defer m.Unlock()
-// 		for key, value := range m.InputFiles {
-// 			if !value {
-// 				m.InputFiles[key] = true // assuming that tasks dont fail at all
-// 				return key, m.phase
-// 			}
-// 		}
-// 		fmt.Println("Map phase completed")
-// 		return "", 1
-// 	}
-
-// }
-
-// testing not actual code.
-// func (m *Master) AllocateMapTask() (string, Phase) {
-// 	for key, value := range m.InputFiles {
-// 		if !value {
-// 			m.InputFiles[key] = true // assuming that tasks dont fail at all
-// 			return key, Map_phase
-// 		}
-// 	}
-// 	// need to write better logic here have to see why its failing
-// 	m.Worker_Count -= 1
-// 	if m.Worker_Count == 0 {
-// 		m.phase = End_phase
-// 		fmt.Println("Reached end for the map phase for all workers")
-// 		return "", End_phase
-// 	} else if m.Worker_Count != 0 {
-// 		return "", Wait
-// 	}
-// 	return "", End_phase
-
-// }
 
 func (m *Master) AllocateMapTask(workerID int) []string {
 	files := m.workerFiles[workerID]
@@ -96,16 +58,16 @@ func (m *Master) GetTask(args GetTaskArgs, reply *GetTaskReply) error {
 
 	} else if m.phase == End_phase { // have to change to Reduce Phase
 
-		reply.FileName = nil
+		reply.FileName = m.IRfiles
 		reply.TaskType = End_phase
 	}
 	return nil
 }
 
-func (m *Master) setIrValue(fileName string) error {
+func (m *Master) setIrfiles(irFiles []string) error {
 	m.Lock()
 	defer m.Unlock()
-	m.IRfiles[fileName] = false // adding IR files
+	m.IRfiles = append(m.IRfiles, irFiles...) // adding IR files
 	return nil
 }
 
@@ -119,7 +81,7 @@ func (m *Master) setWorkerStatus(workerId int, status WorkerPhase) error {
 // set The IR file from  the worker:
 // worker calls after completing map task
 func (m *Master) SetIRFile(args SetIRfileArgs, reply *SetIRFileReply) error {
-	m.setIrValue(args.FileName)
+	m.setIrfiles(args.IRfiles)
 	m.setWorkerStatus(args.WorkerId, IDLE) // set so that it can wait for other workers
 	reply.Ok = 1
 	return nil
@@ -169,7 +131,7 @@ func MakeMaster(inputFilesPath string, workerCount int) *Master {
 	// 	}
 	// }
 	mappedFiles := make(map[string]bool)
-	irFiles := make(map[string]bool)
+	irFiles := []string{}
 	for _, file := range files {
 		filename := fmt.Sprintf("%s/%s", inputFilesPath, file.Name())
 		mappedFiles[filename] = false

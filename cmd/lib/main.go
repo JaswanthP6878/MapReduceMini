@@ -15,7 +15,7 @@ func main() {
 	path := "/Users/jaswanthpinnepu/Desktop/dfs"
 
 	// worker_count
-	var worker_count int = 2
+	var worker_count int = 3
 	master := internal.MakeMaster(path, worker_count)
 
 	done := make(chan int)
@@ -23,21 +23,19 @@ func main() {
 	for i := 0; i < worker_count; i++ {
 		workers = append(workers, internal.MakeWorker(i+1, worker_count, done))
 	}
-
 	start := time.Now()
-
 	// worker run
 	for _, worker := range workers {
 		go worker.Run()
 	}
-	//  do blocking for both
+	//  do blocking for workers
 	for i := 0; i < worker_count; i++ {
 		<-done // blocking join operation
 	}
 
 	fmt.Printf("Total time: %v\n", time.Since(start).Seconds())
 	// get ir files(testing)
-	for key := range master.IRfiles {
-		fmt.Println(key)
+	for _, fileName := range master.IRfiles {
+		fmt.Println(fileName)
 	}
 }
