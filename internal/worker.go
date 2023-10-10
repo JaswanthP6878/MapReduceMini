@@ -22,7 +22,6 @@ const iR_dir string = "/Users/jaswanthpinnepu/Desktop/irfs"
 // process input file and returns the IR file location
 func (w *Worker) Mapwork(files []string) (string, error) {
 	ir_file := fmt.Sprintf("%v/mr-%v-out", iR_dir, w.id)
-
 	//if IR file does not exist create it
 	if _, err := os.Stat(ir_file); err != nil {
 		_, err := os.Create(ir_file)
@@ -31,9 +30,7 @@ func (w *Worker) Mapwork(files []string) (string, error) {
 			return "", err
 		}
 	}
-
 	irData := []KeyValue{}
-
 	for _, fileName := range files {
 		file, err := os.Open(fileName)
 		if err != nil {
@@ -42,10 +39,8 @@ func (w *Worker) Mapwork(files []string) (string, error) {
 		}
 		defer file.Close()
 		filedata, _ := io.ReadAll(file)
-
 		// call the Map function...
 		kv := Map(fileName, string(filedata))
-
 		irData = append(irData, kv...)
 	}
 	// sort them so that my life becomes easy on reduce phase or not????
@@ -66,13 +61,13 @@ func (w *Worker) Mapwork(files []string) (string, error) {
 // reduce function
 // use the hashKey to see what worker reads and processes what key.
 func (w *Worker) reduceWork(files []string) (string, error) {
+	kva := []KeyValue{}
 	for _, file := range files {
 		openFile, err := os.Open(file)
 		if err != nil {
 			fmt.Printf("Error occured while reading file!")
 			return "", err
 		}
-		kva := []KeyValue{}
 		// reading kv pairs
 		dec := json.NewDecoder(openFile)
 		for {
@@ -82,10 +77,7 @@ func (w *Worker) reduceWork(files []string) (string, error) {
 			}
 			kva = append(kva, kv)
 		}
-		// need to do from here
-		// use the ihash function and only apply reduce on the values mapped
-		// to this worker based on worker id
-		// ihash(kv.Key) % worker_count
+		// filter based on hash function
 	}
 
 	return "", nil

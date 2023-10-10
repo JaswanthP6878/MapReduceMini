@@ -14,7 +14,7 @@ type KeyValue struct {
 	Value string
 }
 
-// use ihash(key) % NReduce to choose the reduce
+// use ihash(key) % #outfiles to choose the reduce
 // task number for each KeyValue emitted by Map.
 func ihash(key string) int {
 	h := fnv.New32a()
