@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/rpc"
 	"os"
+	"sort"
 	"time"
 )
 
@@ -31,6 +32,8 @@ func (w *Worker) Mapwork(files []string) (string, error) {
 		}
 	}
 
+	irData := []KeyValue{}
+
 	for _, fileName := range files {
 		file, err := os.Open(fileName)
 		if err != nil {
@@ -43,20 +46,26 @@ func (w *Worker) Mapwork(files []string) (string, error) {
 		// call the Map function...
 		kv := Map(fileName, string(filedata))
 
-		Irfile, _ := os.OpenFile(ir_file, os.O_RDWR, os.ModeAppend)
-		encoder := json.NewEncoder(Irfile)
-		for _, value := range kv {
-			err = encoder.Encode(value)
-			if err != nil {
-				fmt.Println("encoding Error")
-				return "", err
-			}
-		}
-		defer Irfile.Close()
+		irData = append(irData, kv...)
 	}
+	// sort them so that my life becomes easy on reduce phase or not????
+	sort.Sort(ByKey(irData))
+	Irfile, _ := os.OpenFile(ir_file, os.O_RDWR, os.ModeAppend)
+	encoder := json.NewEncoder(Irfile)
+	for _, value := range irData {
+		err := encoder.Encode(value)
+		if err != nil {
+			fmt.Println("encoding Error")
+			return "", err
+		}
+	}
+	defer Irfile.Close()
 	return ir_file, nil
-
 }
+
+// reduce function
+// func (w *Worker) reduceWork(files []string) (string, error) {
+// }
 
 // loop of worker lifespan
 func (w *Worker) Run() {
