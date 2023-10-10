@@ -16,6 +16,7 @@ type KeyValue struct {
 
 // use ihash(key) % #outfiles to choose the reduce
 // task number for each KeyValue emitted by Map.
+// starts from 0
 func ihash(key string) int {
 	h := fnv.New32a()
 	h.Write([]byte(key))

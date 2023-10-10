@@ -12,8 +12,9 @@ import (
 )
 
 type Worker struct {
-	id   int
-	done chan int // sends done signal to the main function not master
+	id           int
+	done         chan int // sends done signal to the main function not master
+	worker_count int
 }
 
 // intermediate files location
@@ -21,13 +22,19 @@ const iR_dir string = "/Users/jaswanthpinnepu/Desktop/irfs"
 
 // process input file and returns the IR file location
 func (w *Worker) Mapwork(files []string) (string, error) {
-	ir_file := fmt.Sprintf("%v/mr-%v-out", iR_dir, w.id)
+	var irFiles = []string{}
+	for i := 1; i <= w.worker_count; i++ {
+		irFiles = append(irFiles, fmt.Sprintf("%v/mr-%v-%v", iR_dir, w.id, i))
+	}
+
 	//if IR file does not exist create it
-	if _, err := os.Stat(ir_file); err != nil {
-		_, err := os.Create(ir_file)
-		if err != nil {
-			fmt.Printf("IR file cannot be created!")
-			return "", err
+	for _, ir_file := range irFiles {
+		if _, err := os.Stat(ir_file); err != nil {
+			_, err := os.Create(ir_file)
+			if err != nil {
+				fmt.Printf("IR file cannot be created!")
+				return "", err
+			}
 		}
 	}
 	irData := []KeyValue{}
@@ -45,43 +52,67 @@ func (w *Worker) Mapwork(files []string) (string, error) {
 	}
 	// sort them so that my life becomes easy on reduce phase or not????
 	sort.Sort(ByKey(irData))
-	Irfile, _ := os.OpenFile(ir_file, os.O_RDWR, os.ModeAppend)
-	encoder := json.NewEncoder(Irfile)
-	for _, value := range irData {
-		err := encoder.Encode(value)
+
+	// file descriptors
+	encoderArray := []json.Encoder{}
+	fdarray := []*os.File{}
+	for _, irfile := range irFiles {
+		fd, err := os.OpenFile(irfile, os.O_RDWR, os.ModeAppend)
+		fdarray = append(fdarray, fd)
 		if err != nil {
-			fmt.Println("encoding Error")
+			fmt.Println("Error while openning file")
 			return "", err
 		}
+		encoder := json.NewEncoder(fd)
+		encoderArray = append(encoderArray, *encoder)
 	}
-	defer Irfile.Close()
-	return ir_file, nil
+	// mapping and creating encoders
+	// for each of the files
+
+	// enterfing values into the encoders
+	i := 0
+	for i < len(irData) {
+		j := i + 1
+		for j < len(irData) && irData[j].Key == irData[i].Key {
+			j++
+		}
+		// values := []string{}
+		encoderIndex := ihash(irData[i].Key) % w.worker_count
+		for k := i; k < j; k++ {
+			encoderArray[encoderIndex].Encode(irData[k])
+		}
+		i = j
+	}
+	for _, file := range fdarray {
+		file.Close()
+	}
+	return irFiles[0], nil
 }
 
 // reduce function
 // use the hashKey to see what worker reads and processes what key.
-func (w *Worker) reduceWork(files []string) (string, error) {
-	kva := []KeyValue{}
-	for _, file := range files {
-		openFile, err := os.Open(file)
-		if err != nil {
-			fmt.Printf("Error occured while reading file!")
-			return "", err
-		}
-		// reading kv pairs
-		dec := json.NewDecoder(openFile)
-		for {
-			var kv KeyValue
-			if err := dec.Decode(&kv); err != nil {
-				break
-			}
-			kva = append(kva, kv)
-		}
-		// filter based on hash function
-	}
+// func (w *Worker) reduceWork(files []string) (string, error) {
+// 	kva := []KeyValue{}
+// 	for _, file := range files {
+// 		openFile, err := os.Open(file)
+// 		if err != nil {
+// 			fmt.Printf("Error occured while reading file!")
+// 			return "", err
+// 		}
+// 		// reading kv pairs
+// 		dec := json.NewDecoder(openFile)
+// 		for {
+// 			var kv KeyValue
+// 			if err := dec.Decode(&kv); err != nil {
+// 				break
+// 			}
+// 			kva = append(kva, kv)
+// 		}
+// 		// filter based on hash function
+// 	}
 
-	return "", nil
-}
+// 	return "", nil
+// }
 
 // loop of worker lifespan
 func (w *Worker) Run() {
@@ -134,6 +165,6 @@ func call(rpcname string, args interface{}, reply interface{}) bool {
 	return false
 }
 
-func MakeWorker(id int, done chan int) *Worker {
-	return &Worker{id: id, done: done}
+func MakeWorker(id int, worker_count int, done chan int) *Worker {
+	return &Worker{id: id, done: done, worker_count: worker_count}
 }

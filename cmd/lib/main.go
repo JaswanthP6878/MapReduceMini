@@ -21,7 +21,7 @@ func main() {
 	done := make(chan int)
 	workers := []*internal.Worker{}
 	for i := 0; i < worker_count; i++ {
-		workers = append(workers, internal.MakeWorker(i+1, done))
+		workers = append(workers, internal.MakeWorker(i+1, worker_count, done))
 	}
 
 	start := time.Now()
