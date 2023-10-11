@@ -71,7 +71,7 @@ func (w *Worker) Mapwork(files []string) ([]string, error) {
 	// mapping and creating encoders
 	// for each of the files
 
-	// enterfing values into the encoders
+	// enterting values into the encoders
 	i := 0
 	for i < len(irData) {
 		j := i + 1

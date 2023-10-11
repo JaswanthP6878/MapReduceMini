@@ -15,9 +15,8 @@ func main() {
 	path := "/Users/jaswanthpinnepu/Desktop/dfs"
 
 	// worker_count
-	var worker_count int = 3
+	var worker_count int = 2
 	master := internal.MakeMaster(path, worker_count)
-
 	done := make(chan int)
 	workers := []*internal.Worker{}
 	for i := 0; i < worker_count; i++ {
@@ -32,7 +31,6 @@ func main() {
 	for i := 0; i < worker_count; i++ {
 		<-done // blocking join operation
 	}
-
 	fmt.Printf("Total time: %v\n", time.Since(start).Seconds())
 	fmt.Println("The Output files location:")
 	for _, fileName := range master.OutFiles {

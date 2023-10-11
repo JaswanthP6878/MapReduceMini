@@ -11,7 +11,6 @@ import (
 )
 
 type Master struct {
-	InputFiles   map[string]bool
 	workerFiles  map[int][]string
 	phase        Phase
 	IRfiles      []string
@@ -147,7 +146,6 @@ func MakeMaster(inputFilesPath string, workerCount int) *Master {
 	outfiles := []string{}
 
 	m := Master{
-		InputFiles:   mappedFiles,
 		phase:        Map_phase,
 		IRfiles:      irFiles,
 		Worker_Count: workerCount,
