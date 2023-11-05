@@ -6,14 +6,12 @@ import (
 
 	"mapreduce.jaswantp.com/internal"
 )
-
 func main() {
 	// lets start with 1 worker and 1 master.
 	fmt.Println("Starting Map reduce tasks")
 
 	// assume files are in ~/desktop/dfs
 	path := "/Users/jaswanthpinnepu/Desktop/dfs"
-
 	// worker_count
 	var worker_count int = 2
 	master := internal.MakeMaster(path, worker_count)

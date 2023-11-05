@@ -4,7 +4,6 @@ import (
 	"os"
 	"strconv"
 )
-
 type GetTaskArgs struct {
 	WorkerID int // see if we need worker id
 }
