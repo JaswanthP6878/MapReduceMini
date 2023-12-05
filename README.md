@@ -1,6 +1,7 @@
 ### Map Reduce - mini
 
-A single-server Map-reduce tool for data processing. A blog post regarding the implementation can be found [here](https://jaswanthp.me/blog/second-post/)
+A single-server Map-reduce tool for data processing. 
+A blog post regarding the implementation can be found [here](https://jaswanthp.me/blog/second-post/)
 ---
 ### Progress
 - [x] Map part and Intermediate Data generation 
