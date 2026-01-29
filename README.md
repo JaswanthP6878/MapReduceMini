@@ -3,11 +3,7 @@
 ---
 This project implements a **single-node, multi-threaded MapReduce framework**, inspired by the original Google MapReduce model, but designed to run entirely on a single machine using **concurrent execution**.
 
-A detailed blog post explaining the design and implementation is available here:  
-👉 https://jaswanthp6878.github.io/blog/second-post/
-
-The implementation closely follows the concepts described in the original MapReduce paper:  
-📄 http://nil.csail.mit.edu/6.824/2020/papers/mapreduce.pdf
+related blog post regarding implementation can be found [here](https://jaswanthp6878.github.io/blog/second-post/)
 
 ---
 
