@@ -1,8 +1,10 @@
 ### Map Reduce - mini
 
-A single-server Map-reduce tool for data processing. 
 ---
-A blog post regarding the implementation can be found [here](https://jaswanthp6878.github.io/blog/second-post/)
+A single-node Multi-threaded Map-reduce tool for data processing. 
+
+blog post regarding the implementation can be found [here](https://jaswanthp6878.github.io/blog/second-post/)
+
 ### Progress
 - [x] Map part and Intermediate Data generation 
 - [x] IR data partitioning into Buckets
@@ -11,4 +13,4 @@ A blog post regarding the implementation can be found [here](https://jaswanthp68
 - [x] Generating Output files
 ---
 
-> Based on the map-reduce [paper](http://nil.csail.mit.edu/6.824/2020/papers/mapreduce.pdf)
+> Based on the original map-reduce [paper](http://nil.csail.mit.edu/6.824/2020/papers/mapreduce.pdf)
